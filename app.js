@@ -104,14 +104,27 @@ var FEATURED = [9, 10, 11, 12, 8, 3];
   }
 
   /* ---------- revelações ao rolar ---------- */
+  /* Elementos com cortina (.rv-clip) ficam 100% recortados antes de aparecer, e o
+     navegador não os considera visíveis. Por isso observamos o bloco pai deles. */
   var io = null;
+  var targets = new Map();
   if (!reduce && 'IntersectionObserver' in window) {
     io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        (targets.get(e.target) || [e.target]).forEach(function (el) { el.classList.add('in'); });
+        io.unobserve(e.target);
+      });
     }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
   }
   function observe(scope) {
-    $$('[data-io]', scope).forEach(function (el) { if (io) io.observe(el); else el.classList.add('in'); });
+    $$('[data-io]', scope).forEach(function (el) {
+      if (!io) { el.classList.add('in'); return; }
+      var t = el.classList.contains('rv-clip') && el.parentElement ? el.parentElement : el;
+      if (!targets.has(t)) targets.set(t, []);
+      targets.get(t).push(el);
+      io.observe(t);
+    });
   }
 
   /* ---------- portfólio ---------- */
